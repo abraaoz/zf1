@@ -743,7 +743,6 @@ abstract class Zend_Db_Table_Row_Abstract implements ArrayAccess, IteratorAggreg
      */
     protected function _getWhereQuery($useDirty = true)
     {
-        $where = array();
         $db = $this->_getTable()->getAdapter();
         $primaryKey = $this->_getPrimaryKey($useDirty);
         $info = $this->_getTable()->info();
@@ -753,9 +752,16 @@ abstract class Zend_Db_Table_Row_Abstract implements ArrayAccess, IteratorAggreg
         $where = array();
         foreach ($primaryKey as $column => $value) {
             $tableName = $db->quoteIdentifier($info[Zend_Db_Table_Abstract::NAME], true);
-            $type = $metadata[$column]['DATA_TYPE'];
             $columnName = $db->quoteIdentifier($column, true);
-            $where[] = $db->quoteInto("{$tableName}.{$columnName} = ?", $value, $type);
+            if(is_null($value))
+            {
+                $where[] = "{$tableName}.{$columnName} IS NULL";
+            }
+            else
+            {
+                $type = $metadata[$column]['DATA_TYPE'];
+                $where[] = $db->quoteInto("{$tableName}.{$columnName} = ?", $value, $type);
+            }
         }
         return $where;
     }
@@ -771,8 +777,8 @@ abstract class Zend_Db_Table_Row_Abstract implements ArrayAccess, IteratorAggreg
         $row = $this->_getTable()->fetchRow($where);
 
         if (null === $row) {
-            require_once 'Zend/Db/Table/Row/Exception.php';
-            throw new Zend_Db_Table_Row_Exception('Cannot refresh row as parent is missing');
+            $row = $this->_getTable()->createRow($this->_data);
+            $row->save();
         }
 
         $this->_data = $row->toArray();
