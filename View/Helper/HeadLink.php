@@ -401,6 +401,10 @@ class Zend_View_Helper_HeadLink extends Zend_View_Helper_Placeholder_Container_S
             $extras = (array) $extras;
         }
 
+        if(!isset($extras)) {
+            $extras = null;
+        }
+
         $attributes = compact('rel', 'type', 'href', 'media', 'conditionalStylesheet', 'extras');
         return $this->createData($this->_applyExtras($attributes));
     }
